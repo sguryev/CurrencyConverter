@@ -17,8 +17,8 @@ Run integration tests using VS\Rider console
 - FluentAssertion
 
 ## Enhancements
-- Add distribute caching for scalability
-- Improve output cache with some outside service like Redis
+- Add distributed caching for scalability
+- Improve output cache with some external service like Redis
 - Add rate limiting to endpoints
 - Use NBomber for load testing
 - Test Frankfurter API limits
