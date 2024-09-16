@@ -12,7 +12,7 @@ Run integration tests using VS\Rider console
 - Typed HttpClient
 - Standard resilience handler for retrying, rate limiting, etc
 - InMemory output cache
-- WebApplicationFactory for integration testing
+- WebApplicationFactory for integration testing with Mocks
 - Route constraints validation  
 - FluentValidation (through filter)
 - FluentAssertion
