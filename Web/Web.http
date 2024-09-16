@@ -1,0 +1,24 @@
+@baseUrl = http://localhost:5082
+
+### GET latest USD
+GET {{baseUrl}}/latest/USD
+
+### GET latest EUR
+GET {{baseUrl}}/latest/EUR
+
+### GET latest aaa
+GET {{baseUrl}}/latest/aaa
+
+### GET convert 10 USD to TRY
+GET {{baseUrl}}/convert/USD/TRY/10
+Accept: application/json
+
+### GET history Sept'24 TRY
+GET {{baseUrl}}/history/2024-09-01/2024-09-10/TRY
+Accept: application/json
+
+### GET history Sept'24 TRY => 400
+GET {{baseUrl}}/history/2024-99-99/2024-99-99/TRY
+Accept: application/json
+
+###
