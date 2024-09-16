@@ -23,3 +23,4 @@ Run integration tests using VS\Rider console
 - Add rate limiting to endpoints
 - Use NBomber for load testing
 - Test Frankfurter API limits
+- Add Dtos for API response (currently reuse Frankfurter responses as is)
