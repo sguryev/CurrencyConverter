@@ -32,87 +32,39 @@ public class FrankfurterClient : IFrankfurterClient
         _logger = logger;
     }
 
-    public async Task<HttpResult<FrankfurterResponse>> GetLatestAsync(string currencyCode, CancellationToken cToken)
+    public Task<HttpResult<FrankfurterResponse>> GetLatestAsync(string currencyCode, CancellationToken cToken) =>
+        GetAsync<FrankfurterResponse>(string.Format(LatestEndpointTemplate, currencyCode), cToken);
+
+    public Task<HttpResult<FrankfurterResponse>> ConvertAsync(string baseCurrencyCode, string targetCurrencyCode, decimal amount, CancellationToken cToken) =>
+        GetAsync<FrankfurterResponse>(string.Format(ConvertEndpointTemplate, baseCurrencyCode, targetCurrencyCode, amount), cToken);
+
+    public Task<HttpResult<FrankfurterSeriesResponse>> GetHistoryAsync(DateOnly beginDate, DateOnly endDate, string currencyCode, CancellationToken cToken) =>
+        GetAsync<FrankfurterSeriesResponse>(string.Format(SeriesEndpointTemplate, beginDate.ToString("O"), endDate.ToString("O"), currencyCode), cToken);
+
+    private async Task<HttpResult<TResult>> GetAsync<TResult>(string endpoint, CancellationToken cToken)
     {
-        using var httpResponseMessage = await _httpClient.GetAsync(string.Format(LatestEndpointTemplate, currencyCode), cToken);
+        using var httpResponseMessage = await _httpClient.GetAsync(endpoint, cToken);
         var contentString = await httpResponseMessage.Content.ReadAsStringAsync(cToken);
         if (!httpResponseMessage.IsSuccessStatusCode)
         {
-            _logger.LogError("[Frankfurter] Error fetching latest rate for {CurrencyCode}: [{Code}] {Message}",
-                currencyCode, httpResponseMessage.StatusCode, contentString);
+            _logger.LogError("[Frankfurter] Error getting {Endpoint}: [{Code}] {Message}", endpoint, httpResponseMessage.StatusCode, contentString);
 
-            return HttpResult<FrankfurterResponse>.Failure(httpResponseMessage.StatusCode);
+            return HttpResult<TResult>.Failure(httpResponseMessage.StatusCode);
         }
 
         try
         {
-            var response = await httpResponseMessage.Content.ReadFromJsonAsync<FrankfurterResponse>(cToken);
+            var response = JsonSerializer.Deserialize<TResult>(contentString);
             if (response != null)
-                return HttpResult<FrankfurterResponse>.Success(response);
+                return HttpResult<TResult>.Success(response);
 
-            _logger.LogError("[Frankfurter] GetLatest response is null: {Content}", contentString);
-            return HttpResult<FrankfurterResponse>.InternalError();
+            _logger.LogError("[Frankfurter] Response is null: {Content}", contentString);
+            return HttpResult<TResult>.InternalError();
         }
         catch (JsonException e)
         {
             _logger.LogError(e, "[Frankfurter] Error parsing JSON response: {Content}", contentString);
-            return HttpResult<FrankfurterResponse>.InternalError();
-        }
-    }
-
-    public async Task<HttpResult<FrankfurterResponse>> ConvertAsync(string baseCurrencyCode, string targetCurrencyCode, decimal amount, CancellationToken cToken)
-    {
-        using var httpResponseMessage = await _httpClient.GetAsync(string.Format(ConvertEndpointTemplate, baseCurrencyCode, targetCurrencyCode, amount), cToken);
-        var contentString = await httpResponseMessage.Content.ReadAsStringAsync(cToken);
-        if (!httpResponseMessage.IsSuccessStatusCode)
-        {
-            _logger.LogError("[Frankfurter] Error converting {Amount} {BaseCurrencyCode} to {TargetCurrencyCode}: [{Code}] {Message}",
-                amount, baseCurrencyCode, targetCurrencyCode, httpResponseMessage.StatusCode, contentString);
-
-            return HttpResult<FrankfurterResponse>.Failure(httpResponseMessage.StatusCode);
-        }
-
-        try
-        {
-            var response = await httpResponseMessage.Content.ReadFromJsonAsync<FrankfurterResponse>(cToken);
-            if (response != null)
-                return HttpResult<FrankfurterResponse>.Success(response);
-
-            _logger.LogError("[Frankfurter] Convert response is null: {Content}", contentString);
-            return HttpResult<FrankfurterResponse>.InternalError();
-        }
-        catch (JsonException e)
-        {
-            _logger.LogError(e, "[Frankfurter] Error parsing JSON response: {Content}", contentString);
-            return HttpResult<FrankfurterResponse>.InternalError();
-        }
-    }
-
-    public async Task<HttpResult<FrankfurterSeriesResponse>> GetHistoryAsync(DateOnly beginDate, DateOnly endDate, string currencyCode, CancellationToken cToken)
-    {
-        using var httpResponseMessage = await _httpClient.GetAsync(string.Format(SeriesEndpointTemplate, beginDate.ToString("O"), endDate.ToString("O"), currencyCode), cToken);
-        var contentString = await httpResponseMessage.Content.ReadAsStringAsync(cToken);
-        if (!httpResponseMessage.IsSuccessStatusCode)
-        {
-            _logger.LogError("[Frankfurter] Error getting series for {CurrencyCode} from {BeginDate} to {EndDate}: [{Code}] {Message}",
-                currencyCode, beginDate, endDate, httpResponseMessage.StatusCode, contentString);
-
-            return HttpResult<FrankfurterSeriesResponse>.Failure(httpResponseMessage.StatusCode);
-        }
-
-        try
-        {
-            var response = await httpResponseMessage.Content.ReadFromJsonAsync<FrankfurterSeriesResponse>(cToken);
-            if (response != null)
-                return HttpResult<FrankfurterSeriesResponse>.Success(response);
-
-            _logger.LogError("[Frankfurter] Convert response is null: {Content}", contentString);
-            return HttpResult<FrankfurterSeriesResponse>.InternalError();
-        }
-        catch (JsonException e)
-        {
-            _logger.LogError(e, "[Frankfurter] Error parsing JSON response: {Content}", contentString);
-            return HttpResult<FrankfurterSeriesResponse>.InternalError();
+            return HttpResult<TResult>.InternalError();
         }
     }
 }
